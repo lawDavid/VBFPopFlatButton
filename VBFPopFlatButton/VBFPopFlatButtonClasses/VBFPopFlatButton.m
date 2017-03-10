@@ -18,6 +18,8 @@
 @property (nonatomic, strong) VBFDoubleSegment *thirdSegment; //Only used for menu button
 @property (nonatomic, strong) CALayer *bckgLayer;
 @property (nonatomic) BOOL animateToStartPosition;
+@property (nonatomic) BOOL updatedConstrains;
+
 @end
 
 @implementation VBFPopFlatButton
@@ -36,6 +38,7 @@
         self.lineThickness = 2;
         self.lineRadius = 0;
         self.animateToStartPosition = animateToInitialState;
+        self.updatedConstrains = NO;
         self.tintColor = [UIColor whiteColor];
         [self commonSetup];
     }
@@ -50,13 +53,28 @@
         self.lineThickness = 2;
         self.lineRadius = 0;
         self.animateToStartPosition = YES;
+        self.updatedConstrains = NO;
         self.tintColor = [UIColor whiteColor];
         [self commonSetup];
     }
     return self;
 }
 
-- (void) commonSetup {
+- (void)updateConstraints {
+    [super updateConstraints];
+    self.updatedConstrains = YES;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    if (self.updatedConstrains) {
+        [self.layer.sublayers makeObjectsPerformSelector:@selector(removeFromSuperlayer)];
+        [self commonSetup];
+        self.updatedConstrains = NO;
+    }
+}
+
+- (void)commonSetup {
     _firstSegment = [[VBFDoubleSegment alloc]initWithLength:self.frame.size.width
                                                   thickness:self.lineThickness
                                                      radius:self.lineRadius
@@ -92,7 +110,7 @@
     self.bckgLayer.frame = CGRectInset(self.bounds, -amount, -amount);
     self.bckgLayer.cornerRadius = self.bckgLayer.bounds.size.width/2;
     self.bckgLayer.backgroundColor = self.roundBackgroundColor.CGColor;
-
+    
     [self.layer insertSublayer:self.bckgLayer below:_firstSegment];
 }
 
@@ -101,7 +119,7 @@
         if (!self.bckgLayer) {
             [self setupBackgroundLayer];
         }
-        self.bckgLayer.backgroundColor = roundBackgroundColor.CGColor;
+        _roundBackgroundColor = roundBackgroundColor;
     }
 }
 - (void)setLineThickness:(CGFloat)lineThickness {
@@ -262,7 +280,7 @@
             [self.firstSegment moveToState:doubleSegmentDownArrow animated:self.animateToStartPosition];
             [self.secondSegment moveToState:doubleSegmentDownArrow animated:self.animateToStartPosition];
             self.secondSegment.opacity = 0.0;
-
+            
             firstOriginPoint.y += CGRectGetHeight(self.firstSegment.frame)/5;
             break;
         case buttonDownArrowType:
@@ -274,7 +292,7 @@
             [self.firstSegment moveToState:doubleSegmentUpArrow animated:self.animateToStartPosition];
             [self.secondSegment moveToState:doubleSegmentUpArrow animated:self.animateToStartPosition];
             self.secondSegment.opacity = 0.0;
-
+            
             firstOriginPoint.y -= CGRectGetHeight(self.firstSegment.frame)/5;
             break;
         case buttonPausedType:
@@ -359,8 +377,8 @@
             firstOriginPoint.x -= offsetAmount;
             secondOriginPoint.x += offsetAmount;
             break;
-
-
+            
+            
         default:
             break;
     }
